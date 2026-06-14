@@ -1,0 +1,19 @@
+{
+  "api": "",
+  "auth": {
+    "clientId": "frontend-services",
+    "authority": "https://hydra-jx-staging.jx.leartech.com",
+    "scope": "openid profile email leartechapi offline",
+    "audiences": [
+      "leartech-rust-service-template",
+      "leartech-go-service-template",
+      "leartech-dotnet-service-template"
+    ]
+  },
+  "peers": {
+    "leartech-rust-service-template": "https://leartech-rust-service-template-jx-staging.jx.leartech.com",
+    "leartech-go-service-template": "https://leartech-go-service-template-jx-staging.jx.leartech.com",
+    "leartech-dotnet-service-template": "https://leartech-dotnet-service-template-jx-staging.jx.leartech.com"
+  },
+  "featureFlags": {}
+}

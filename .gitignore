@@ -1,0 +1,16 @@
+node_modules/
+dist/
+out-tsc/
+coverage/
+.angular/
+
+*.log
+npm-debug.log*
+
+.idea/
+.vscode/
+.DS_Store
+
+.env
+.env.local
+pr-logs/

@@ -1,0 +1,34 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  creationTimestamp: null
+  name: test
+spec:
+  pipelineSpec:
+    tasks:
+    - name: ng-test
+      resources: {}
+      taskSpec:
+        metadata: {}
+        stepTemplate:
+          image: uses:mikelear/leartech-pipeline-catalog/tasks/ng-test/pullrequest.yaml@main
+          name: ""
+          resources: {}
+          workingDir: /workspace/source
+          # Template has one trivial spec. Lower the threshold until
+          # consumers add real suites. Matches the Go template pattern.
+          env:
+          - name: COVERAGE_THRESHOLD
+            value: "30.0"
+        steps:
+        - name: ""
+          resources: {}
+  podTemplate:
+    tolerations:
+    - key: sku
+      operator: Equal
+      value: build
+      effect: NoSchedule
+  serviceAccountName: tekton-bot
+  timeout: 1h0m0s
+status: {}

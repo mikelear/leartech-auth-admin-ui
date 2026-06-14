@@ -1,0 +1,41 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  creationTimestamp: null
+  name: pullrequest
+spec:
+  pipelineSpec:
+    tasks:
+    - name: from-build-pack
+      resources: {}
+      taskSpec:
+        metadata: {}
+        stepTemplate:
+          image: uses:mikelear/leartech-pipeline-catalog/tasks/angular/pullrequest.yaml@main
+          name: ""
+          env:
+          # Same pattern as leartech-auth-ui: inject GIT_TOKEN at the
+          # stepTemplate level so every step in the catalog's angular
+          # build-pack inherits it. `.npmrc` resolves @mikelear/* against
+          # npm.pkg.github.com using ${GIT_TOKEN}; without this env, the
+          # build-npm-install step 401s before kaniko even starts.
+          - name: GIT_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: tekton-git
+                key: password
+                optional: true
+          resources: {}
+          workingDir: /workspace/source
+        steps:
+        - name: ""
+          resources: {}
+  podTemplate:
+    tolerations:
+    - key: sku
+      operator: Equal
+      value: build
+      effect: NoSchedule
+  serviceAccountName: tekton-bot
+  timeout: 2h0m0s
+status: {}

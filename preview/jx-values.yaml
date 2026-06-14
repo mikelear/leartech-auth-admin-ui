@@ -1,0 +1,5 @@
+# This file is replaced by `jx preview create` at runtime with the
+# cluster's actual jxRequirements (domain, namespaceSubDomain, TLS, etc.).
+# The placeholder prevents `helmfile destroy` from failing when the
+# file doesn't exist.
+dummy: value

@@ -1,0 +1,80 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/mikelear/leartech-auth-admin-ui
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  name: leartech-auth-admin-ui
+  type: ClusterIP
+  port: 80
+  externalPort: 80
+
+# Ingress annotations + overrides (domain comes from jxRequirements)
+ingress:
+  annotations: {}
+  pathType: ImplementationSpecific
+  labels: {}
+
+# jxRequirements — auto-populated from jx-values.yaml per cluster/env.
+# Do NOT hardcode domains here. Preview gets domain from jx preview create,
+# staging/prod from the GitOps helmfile jx-values.yaml.
+jxRequirements:
+  ingress:
+    annotations: {}
+    apiVersion: "networking.k8s.io/v1"
+    domain: ""
+    externalDNS: false
+    namespaceSubDomain: -jx.
+    serviceType: ""
+    tls:
+      email: ""
+      enabled: false
+      production: false
+      secretName: ""
+
+knativeDeploy: false
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+jx:
+  releasedByJX: true
+
+# Runtime config served at /api.conf.json — populated per-environment in
+# preview helmfile / staging / prod values files. See
+# hub/shared-rules/conventions.md § Frontend runtime config.
+# Consumers replace / extend keys here with their service's runtime knobs.
+config:
+  # api: unused on the template (no own backend); cloned services that
+  # talk to a single backend point this at it. Fleet-status reads its
+  # peer URLs from `peers` below — keyed by service name → base URL.
+  api: ""
+  # OIDC auth wiring. `clientId` matches the registered OAuth2 client in
+  # leartech-auth-service (frontend-services). `authority` points at the
+  # cluster's Hydra. `audiences[]` is forwarded as `audience=` on
+  # /oauth2/authorize per RFC 8707 — Hydra populates the issued token's
+  # `aud` claim so each backend's AuthLayer validates its own service
+  # name. See @mikelear/leartech-common provideLeartechAuth.
+  auth:
+    clientId: frontend-services
+    authority: ""
+    scope: "openid profile email leartechapi offline"
+    audiences:
+      - leartech-rust-service-template
+      - leartech-go-service-template
+      - leartech-dotnet-service-template
+  # Peer service base URLs — fleet-status reads these instead of
+  # composing them in source. Cloned services replace this with the
+  # actual peers their UI consumes.
+  peers:
+    leartech-rust-service-template: ""
+    leartech-go-service-template: ""
+    leartech-dotnet-service-template: ""
+  featureFlags: {}
