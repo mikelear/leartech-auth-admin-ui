@@ -2,6 +2,7 @@ import { APP_INITIALIZER, ApplicationConfig, inject, provideZoneChangeDetection 
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { EnvironmentService, provideLeartechAuth } from '@mikelear/leartech-common';
+import { Configuration } from '@mikelear/leartech-auth-service-angular';
 
 import { routes } from './app.routes';
 
@@ -33,5 +34,21 @@ export const appConfig: ApplicationConfig = {
       multi: true,
     },
     ...provideLeartechAuth(),
+    // Point the generated auth-service SDK at the leartech-auth-service base URL
+    // from runtime config (api.conf.json → peers). The SDK's HttpClient calls go
+    // through leartech-common's AuthInterceptor, so the platform/tenant-admin
+    // bearer is injected automatically — no per-call token handling. Resolved
+    // lazily (first AdminService injection), after APP_INITIALIZER loaded config.
+    {
+      provide: Configuration,
+      useFactory: (env: EnvironmentService) =>
+        new Configuration({
+          basePath:
+            (env.getEnvironment() as { peers?: Record<string, string> })?.peers?.[
+              'leartech-auth-service'
+            ] ?? '',
+        }),
+      deps: [EnvironmentService],
+    },
   ],
 };

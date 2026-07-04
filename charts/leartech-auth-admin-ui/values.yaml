@@ -67,6 +67,9 @@ config:
     authority: ""
     scope: "openid profile email leartechapi offline"
     audiences:
+      # leartech-auth-service must be in the token aud[] so the admin API
+      # accepts the platform/tenant-admin bearer (RFC 8707 audience binding).
+      - leartech-auth-service
       - leartech-rust-service-template
       - leartech-go-service-template
       - leartech-dotnet-service-template
@@ -74,6 +77,9 @@ config:
   # composing them in source. Cloned services replace this with the
   # actual peers their UI consumes.
   peers:
+    # Base URL of leartech-auth-service — the SDK's basePath (app.config.ts).
+    # Set per-environment in the preview helmfile / staging / prod values.
+    leartech-auth-service: ""
     leartech-rust-service-template: ""
     leartech-go-service-template: ""
     leartech-dotnet-service-template: ""

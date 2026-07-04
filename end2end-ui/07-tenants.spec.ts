@@ -1,0 +1,94 @@
+import { test, expect } from 'playwright/test';
+
+/**
+ * Tenants screen — STAGING-ONLY (preview namespaces deploy only this chart:
+ * no Hydra, no auth-service — so login-based specs gate on STAGING_URL).
+ *
+ * Proves the SDK adoption end to end: log in as the PLATFORM admin
+ * (platform@leartech.com, role=platform_admin — seeded by auth-service's chart
+ * seed Job), open /tenants, and confirm the screen lists tenants via the
+ * generated auth-service SDK (AdminService.adminListTenants) and can create one
+ * (adminCreateTenant). A non-platform user is 403'd (covered at the API level by
+ * auth-service end2end/11-platform-admin.sh); here we drive the real UI + SDK.
+ *
+ * Prereq in staging: the deployed auth-admin-ui must have
+ * peers.leartech-auth-service set (staging values) so the SDK basePath points at
+ * auth-service, and leartech-auth-service in audiences[] so the admin API
+ * accepts the bearer (RFC 8707).
+ */
+test.describe('tenants (platform admin)', () => {
+  test.beforeEach(() => {
+    if (!process.env['STAGING_URL']) {
+      test.skip(true, 'tenants requires Hydra + auth-service — staging-only');
+    }
+  });
+
+  test('platform admin lists and creates tenants via the SDK', async ({ page }) => {
+    // Log in as the PLATFORM admin — the tenant API requires PlatformAdmin, so
+    // the default test user would 403. Poll for state (never networkidle).
+    await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 20_000 });
+
+    const alreadyAuthed =
+      (await page.locator('[data-testid="authenticated-page"]').count()) > 0;
+    if (!alreadyAuthed) {
+      const signIn = page.getByRole('button', { name: 'Sign in' });
+      await expect(signIn).toBeVisible({ timeout: 15_000 });
+      await signIn.click();
+
+      const emailField = page
+        .locator('input[type="email"], input[name="email"]')
+        .first();
+      await expect(emailField, 'login form not reached').toBeVisible({
+        timeout: 15_000,
+      });
+      await emailField.fill('platform@leartech.com');
+      await page
+        .locator('input[type="password"]')
+        .first()
+        .fill(process.env['USER_PASSWORD'] || 'Test123!');
+      await page
+        .locator(
+          'button[type="submit"], button:has-text("Login"), button:has-text("Sign in")',
+        )
+        .first()
+        .click();
+
+      await page.waitForURL((url) => !url.pathname.includes('/login'), {
+        timeout: 20_000,
+      });
+    }
+    await expect(
+      page.locator('[data-testid="authenticated-page"]'),
+    ).toBeVisible({ timeout: 15_000 });
+
+    // Open the tenants screen.
+    await page.getByTestId('nav-tenants').click();
+    await expect(
+      page.getByTestId('tenants-page'),
+      'tenants screen did not render',
+    ).toBeVisible({ timeout: 10_000 });
+
+    // The SDK list call resolves — a platform admin (with peer + audience wired)
+    // gets the table; surface a config/permission error loudly instead.
+    await expect(page.getByTestId('tenants-table')).toBeVisible({
+      timeout: 15_000,
+    });
+    if ((await page.getByTestId('tenants-error').count()) > 0) {
+      throw new Error(
+        'tenants list errored: ' +
+          (await page.getByTestId('tenants-error').innerText()),
+      );
+    }
+
+    // Create a unique tenant and confirm it appears in the list.
+    const name = 'e2e-admin-' + Math.random().toString(36).slice(2, 8);
+    await page.getByTestId('tenant-name-input').fill(name);
+    await page.getByTestId('tenant-display-input').fill('E2E Admin UI');
+    await page.getByTestId('tenant-create-button').click();
+
+    await expect(
+      page.getByTestId('tenant-row-' + name),
+      'created tenant not shown after create',
+    ).toBeVisible({ timeout: 15_000 });
+  });
+});

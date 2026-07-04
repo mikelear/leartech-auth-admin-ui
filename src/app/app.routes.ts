@@ -15,4 +15,9 @@ export const routes: Routes = [
         (m) => m.FleetStatusComponent,
       ),
   },
+  {
+    path: 'tenants',
+    loadComponent: () =>
+      import('./tenants/tenants.component').then((m) => m.TenantsComponent),
+  },
 ];
