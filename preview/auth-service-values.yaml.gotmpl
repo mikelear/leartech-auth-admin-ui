@@ -1,0 +1,79 @@
+# Preview values passed to the OCI-published leartech-auth-service chart.
+# Keys mirror the chart's values.yaml structure: parent-chart keys at root,
+# Hydra subchart keys nested under `hydra.*`.
+#
+# Postgres-aligned with auth-service's own preview helmfile post-Mongo→
+# Postgres cutover (2026-04-29). Both auth-service's user store and the
+# Hydra subchart share the single auth-postgresql release; auth-postgresql's
+# initdbScripts seeds two DBs (`hydra` + `auth_service`).
+
+# ---- Auth-service (parent chart) --------------------------------------------
+# Image override — each cluster publishes to its own docker registry
+# (DOCKER_REGISTRY + DOCKER_REGISTRY_ORG set by JX per-cluster), so resolve
+# at pipeline time rather than hardcoding a single cloud.
+image:
+  repository: '{{ requiredEnv "DOCKER_REGISTRY" }}/{{ requiredEnv "DOCKER_REGISTRY_ORG" }}/leartech-auth-service'
+
+clusterID: preview
+
+# Postgres-backed (matches real preview shape post-cutover).
+storeBackend: postgres
+postgresql:
+  dsn: "postgres://auth_service:auth_service@auth-postgresql:5432/auth_service?sslmode=disable"
+  # Single source of truth: the auth-service chart provisions the backend —
+  # goose migrate owns the schema, the seed Job owns the fixtures. auth-ui no
+  # longer hand-copies the schema DDL or the seed SQL (that drift broke #92).
+  runMigrations: true
+  seedTestUser: true
+  testUser:
+    email: "test@leartech.com"
+    password: "Test123!"
+
+# No Maester in preview → OAuth2Client CRD absent → skip rendering client CRs
+oauth:
+  createHydraOAuthClients: false
+
+# ---- Hydra (subchart) -------------------------------------------------------
+hydra:
+  hydra:
+    config:
+      dsn: "postgres://hydra:hydra@auth-postgresql:5432/hydra?sslmode=disable"
+      oauth2:
+        expose_internal_errors: true
+      # JWT access tokens (default is opaque). Required so the browser
+      # can decode `sub` + `email` from the access token via
+      # leartech-common's getPayloadFromAccessToken — without this any
+      # spec that asserts on id_token claims sees empty values.
+      strategies:
+        access_token: jwt
+      # Deterministic secrets for preview. Hydra encrypts signing keys
+      # with `secrets.system`; with persistent Postgres, a randomly-
+      # generated secret per helmfile run leaves the previous run's
+      # encrypted keys in the DB unreadable → discovery 500s with
+      # "Could not ensure that signing keys for hydra.openid.id-token
+      # exists". Hardcoded preview-only secrets sidestep that.
+      secrets:
+        system:
+          - "preview-hydra-system-secret-32chars-ok"
+        cookie:
+          - "preview-hydra-cookie-secret-32chars-ok"
+    automigration:
+      enabled: true
+      type: initContainer
+
+  maester:
+    enabled: false
+
+  deployment:
+    autoscaling:
+      enabled: false
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
+
+  secret:
+    enabled: true
+    nameOverride: hydra-preview-secrets

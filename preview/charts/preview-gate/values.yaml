@@ -1,0 +1,24 @@
+image:
+  repository: ghcr.io/mikelear/preview-gate
+  # Pinned to pick up the HTTP_PROBES check (mikelear/leartech-dockerfiles#7).
+  # Leaving as :latest could serve a cached older image with the env var
+  # silently ignored — the very flake we're trying to close.
+  tag: 0.38.3
+  pullPolicy: IfNotPresent
+
+stabilitySeconds: 30
+expectedVersion: ""
+gateTimeout: 600
+checkInterval: 5
+
+# Opt-in HTTP probes — see leartech-dockerfiles preview-gate gate.sh.
+# Each URL must return 2xx/3xx before the gate opens. Set per-PR in the
+# helmfile (Hydra discovery URL is the cold-start race we hit on PR-19).
+httpProbes: []
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 128Mi

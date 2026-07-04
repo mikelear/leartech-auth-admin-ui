@@ -1,8 +1,9 @@
 import { test, expect } from 'playwright/test';
 
 /**
- * Tenants screen — STAGING-ONLY (preview namespaces deploy only this chart:
- * no Hydra, no auth-service — so login-based specs gate on STAGING_URL).
+ * Tenants screen — runs in PREVIEW and STAGING. preview/helmfile.yaml.gotmpl now
+ * provisions the full stack (postgres + auth-service[+Hydra+seed] + auth-ui for
+ * the login form), so the platform-admin login + admin API work per-PR too.
  *
  * Proves the SDK adoption end to end: log in as the PLATFORM admin
  * (platform@leartech.com, role=platform_admin — seeded by auth-service's chart
@@ -18,8 +19,10 @@ import { test, expect } from 'playwright/test';
  */
 test.describe('tenants (platform admin)', () => {
   test.beforeEach(() => {
-    if (!process.env['STAGING_URL']) {
-      test.skip(true, 'tenants requires Hydra + auth-service — staging-only');
+    // Full auth stack is present in both preview and staging; skip only a bare
+    // local run with no target.
+    if (!process.env['STAGING_URL'] && !process.env['PREVIEW_URL']) {
+      test.skip(true, 'tenants requires the auth stack — set PREVIEW_URL or STAGING_URL');
     }
   });
 
