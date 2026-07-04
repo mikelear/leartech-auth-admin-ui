@@ -18,8 +18,10 @@ import { FleetStatusComponent } from './fleet-status.component';
  */
 
 class StubEnvironmentService {
-  private env: Record<string, unknown> = { peers: {} };
-  setEnv(env: Record<string, unknown>) { this.env = env; }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private env: any = { peers: {} };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setEnv(env: any) { this.env = env; }
   async load() { return this.env; }
    
   getEnvironment() { return this.env; }
