@@ -98,9 +98,9 @@ releases:
   - '{{ $namespace }}/preview-auth-service'
   set:
   # domain is REQUIRED for the leartech.ingress helper to render the ingress
-  # ({{- if .Values.jxRequirements.ingress.domain }}); without it auth-ui's
-  # login host 404s. Host = service.name (leartech-auth-ui) + subdomain + domain
-  # = $uiHost, which Hydra's login URL points at.
+  # (its guard checks jxRequirements.ingress.domain); without it auth-ui's login
+  # host 404s. Host = service.name (leartech-auth-ui) + subdomain + domain =
+  # uiHost, which Hydra's login URL points at.
   - name: jxRequirements.ingress.domain
     value: '{{ $domain }}'
   - name: jxRequirements.ingress.namespaceSubDomain
