@@ -2,7 +2,8 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { AdminService, ModelsTenant } from '@mikelear/leartech-auth-service-angular';
+import { ModelsTenant } from '@mikelear/leartech-auth-service-angular';
+import { TenantsApiAdapter } from './tenants-api.adapter';
 
 /**
  * Tenants — platform-admin screen. Lists and creates tenants through the
@@ -89,7 +90,7 @@ import { AdminService, ModelsTenant } from '@mikelear/leartech-auth-service-angu
   ],
 })
 export class TenantsComponent implements OnInit {
-  private readonly admin = inject(AdminService);
+  private readonly api = inject(TenantsApiAdapter);
 
   readonly tenants = signal<ModelsTenant[]>([]);
   readonly loading = signal(true);
@@ -106,10 +107,7 @@ export class TenantsComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const res = (await firstValueFrom(this.admin.adminListTenants())) as {
-        tenants?: ModelsTenant[];
-      };
-      this.tenants.set(res?.tenants ?? []);
+      this.tenants.set(await firstValueFrom(this.api.listTenants()));
     } catch (e) {
       this.error.set(this.describe(e));
     } finally {
@@ -126,7 +124,7 @@ export class TenantsComponent implements OnInit {
     this.error.set(null);
     try {
       await firstValueFrom(
-        this.admin.adminCreateTenant({
+        this.api.createTenant({
           name,
           displayName: this.newDisplayName().trim() || undefined,
         }),
