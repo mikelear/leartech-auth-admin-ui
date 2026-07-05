@@ -18,6 +18,7 @@ import { FleetStatusComponent } from './fleet-status.component';
  */
 
 class StubEnvironmentService {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private env: any = { peers: {} };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setEnv(env: any) { this.env = env; }

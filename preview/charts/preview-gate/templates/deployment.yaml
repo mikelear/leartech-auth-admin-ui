@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: preview-gate
+  labels:
+    app: preview-gate
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: preview-gate
+  template:
+    metadata:
+      labels:
+        app: preview-gate
+    spec:
+      serviceAccountName: preview-gate
+      securityContext:
+        runAsUser: 1000
+        runAsNonRoot: true
+      containers:
+      - name: gate
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 8090
+          name: http
+        env:
+        - name: STABILITY_SECONDS
+          value: "{{ .Values.stabilitySeconds }}"
+        {{- if .Values.expectedVersion }}
+        - name: EXPECTED_VERSION
+          value: "{{ .Values.expectedVersion }}"
+        {{- end }}
+        - name: GATE_TIMEOUT
+          value: "{{ .Values.gateTimeout }}"
+        - name: CHECK_INTERVAL
+          value: "{{ .Values.checkInterval }}"
+        {{- with .Values.httpProbes }}
+        - name: HTTP_PROBES
+          value: {{ join " " . | quote }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}

@@ -1,0 +1,45 @@
+# PostgreSQL for preview — single instance, two databases (`hydra` + `auth_service`).
+# Bitnami chart only seeds one database via auth.database; the second db + user +
+# the auth-service schema come from initdbScripts (run on first container boot).
+#
+# Bitnami removed versioned tags from bitnami/postgresql (now only :latest).
+# bitnamilegacy/postgresql tops out at 17.6.0 — pin to the latest available
+# revision. Postgres 17 is fine for our use; nothing here needs pg18 features.
+global:
+  security:
+    allowInsecureImages: true
+
+image:
+  registry: docker.io
+  repository: bitnamilegacy/postgresql
+  tag: 17.6.0-debian-12-r4
+
+auth:
+  enablePostgresUser: true
+  postgresPassword: postgres
+  username: hydra
+  password: hydra
+  database: hydra
+
+primary:
+  persistence:
+    enabled: false
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 768Mi
+  # initdb.scripts run via psql; default user is `auth.username` (hydra), which
+  # lacks CREATEROLE/CREATEDB. Run as postgres superuser instead.
+  initdb:
+    user: postgres
+    password: postgres
+    scripts:
+      00-auth-service.sql: |
+        -- Bootstrap ONLY — role + database. Schema is owned by goose (the chart
+        -- migrate Job runs in preview now); no hand-copied DDL here to drift.
+        CREATE USER auth_service WITH PASSWORD 'auth_service';
+        CREATE DATABASE auth_service OWNER auth_service;
+        GRANT ALL PRIVILEGES ON DATABASE auth_service TO auth_service;
