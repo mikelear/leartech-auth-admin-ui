@@ -26,7 +26,6 @@ interface TokenClaims {
         <h1>{{ title }}</h1>
         <p class="sub">Golden Angular SPA service template.</p>
         <nav>
-          <a routerLink="/fleet-status">Fleet status</a>
           @if (isAuthenticated()) {
             <a routerLink="/tenants" data-testid="nav-tenants">Tenants</a>
             <a routerLink="/users" data-testid="nav-users">Users</a>
