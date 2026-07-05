@@ -16,7 +16,13 @@ import { defineConfig } from 'playwright/test';
 export default defineConfig({
   testDir: '.',
   testMatch: '*.spec.ts',
-  timeout: 30_000,
+  // Per-test cap. The login-based specs (07-tenants, 08-users) drive the full
+  // OAuth round-trip — form load + submit + Hydra consent + callback + token
+  // decode — then screen actions. On the in-cluster software-rendered
+  // (swiftshader) browser that exceeds 30s, so the test was killed mid-flow on
+  // GCP (AZ was just fast enough). 60s gives the slow browser room (matches
+  // leartech-auth-ui's config after the same symptom).
+  timeout: 60_000,
   retries: 0,
   use: {
     baseURL:

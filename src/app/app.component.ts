@@ -29,6 +29,7 @@ interface TokenClaims {
           <a routerLink="/fleet-status">Fleet status</a>
           @if (isAuthenticated()) {
             <a routerLink="/tenants" data-testid="nav-tenants">Tenants</a>
+            <a routerLink="/users" data-testid="nav-users">Users</a>
           }
           @if (isAuthenticated()) {
             <button type="button" (click)="logout()" class="link-button">Sign out</button>
