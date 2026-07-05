@@ -153,6 +153,12 @@ releases:
     value: '{{ requiredEnv "VERSION" }}'
   - name: httpProbes[0]
     value: 'https://{{ $hydraHost }}/.well-known/openid-configuration'
+  # Also wait for the auth-ui login host to be serving (ingress + cert
+  # propagation lags Hydra). Without this the OAuth flow's redirect to
+  # $uiHost/login can 404 while auth-ui's ingress is still warming — the
+  # exact race that failed 07-tenants (hydra was Ready, auth-ui wasn't).
+  - name: httpProbes[1]
+    value: 'https://{{ $uiHost }}/'
 
 # Preview gives you:
 #   https://leartech-auth-admin-ui-prN.<domain>  → admin portal (this PR's build)
