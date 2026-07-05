@@ -9,13 +9,6 @@ export const routes: Routes = [
       ),
   },
   {
-    path: 'fleet-status',
-    loadComponent: () =>
-      import('./fleet-status/fleet-status.component').then(
-        (m) => m.FleetStatusComponent,
-      ),
-  },
-  {
     path: 'tenants',
     loadComponent: () =>
       import('./tenants/tenants.component').then((m) => m.TenantsComponent),

@@ -70,9 +70,6 @@ config:
       # leartech-auth-service must be in the token aud[] so the admin API
       # accepts the platform/tenant-admin bearer (RFC 8707 audience binding).
       - leartech-auth-service
-      - leartech-rust-service-template
-      - leartech-go-service-template
-      - leartech-dotnet-service-template
   # Peer service base URLs — fleet-status reads these instead of
   # composing them in source. Cloned services replace this with the
   # actual peers their UI consumes.
@@ -80,7 +77,4 @@ config:
     # Base URL of leartech-auth-service — the SDK's basePath (app.config.ts).
     # Set per-environment in the preview helmfile / staging / prod values.
     leartech-auth-service: ""
-    leartech-rust-service-template: ""
-    leartech-go-service-template: ""
-    leartech-dotnet-service-template: ""
   featureFlags: {}
