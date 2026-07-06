@@ -1,7 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { AdminService, ModelsUser } from '@mikelear/leartech-auth-service-angular';
+import { AdminService } from '@mikelear/leartech-auth-service-angular';
+import { User } from '../models';
 
 /**
  * Thin adapter over the generated auth-service SDK's AdminService.
@@ -22,19 +23,19 @@ export class UsersApiAdapter {
   private readonly admin = inject(AdminService);
 
   /** List all users (platform-admin). Unwraps the `{ users: [...] }` body. */
-  listUsers(): Observable<ModelsUser[]> {
+  listUsers(): Observable<User[]> {
     return this.admin
       .adminListUsers()
-      .pipe(map((res) => (res as { users?: ModelsUser[] })?.users ?? []));
+      .pipe(map((res) => (res as { users?: User[] })?.users ?? []));
   }
 
   /** Set a user's role (platform-admin). Wraps the plain role as `{ role }`. */
-  setRole(id: string, role: string): Observable<ModelsUser> {
+  setRole(id: string, role: string): Observable<User> {
     return this.admin.adminSetUserRole(id, { role });
   }
 
   /** Activate or deactivate a user (platform-admin). */
-  setActive(id: string, active: boolean): Observable<ModelsUser> {
+  setActive(id: string, active: boolean): Observable<User> {
     return active
       ? this.admin.adminActivateUser(id)
       : this.admin.adminDeactivateUser(id);

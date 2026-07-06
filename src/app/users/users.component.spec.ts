@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
-import { ModelsUser } from '@mikelear/leartech-auth-service-angular';
+import { User } from '../models';
 import { UsersComponent } from './users.component';
 import { UsersApiAdapter } from './users-api.adapter';
 
@@ -44,7 +44,7 @@ describe('UsersComponent', () => {
           permissions: ['read'],
           tenantId: 't1',
         },
-      ] as ModelsUser[]),
+      ] as User[]),
     );
     TestBed.configureTestingModule({
       imports: [UsersComponent],
@@ -63,7 +63,7 @@ describe('UsersComponent', () => {
 
   it('changes a role then reloads the list', async () => {
     api.setRole.and.returnValue(
-      of({ id: 'u1', role: 'tenant_admin' } as ModelsUser),
+      of({ id: 'u1', role: 'tenant_admin' } as User),
     );
     const c = await setup();
     await c.changeRole(c.users()[0], 'tenant_admin');
@@ -80,7 +80,7 @@ describe('UsersComponent', () => {
 
   it('activates/deactivates a user then reloads the list', async () => {
     api.setActive.and.returnValue(
-      of({ id: 'u1', active: false } as ModelsUser),
+      of({ id: 'u1', active: false } as User),
     );
     const c = await setup();
     await c.toggleActive(c.users()[0]);
@@ -97,7 +97,7 @@ describe('UsersComponent', () => {
   });
 
   it('renders empty (no rows, no error) when there are no users', async () => {
-    api.listUsers.and.returnValue(of([] as ModelsUser[]));
+    api.listUsers.and.returnValue(of([] as User[]));
     const c = await setup();
     expect(c.users().length).toBe(0);
     expect(c.error()).toBeNull();
