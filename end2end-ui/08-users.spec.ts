@@ -34,7 +34,7 @@ test.describe('users (platform admin)', () => {
     const alreadyAuthed =
       (await page.locator('[data-testid="authenticated-page"]').count()) > 0;
     if (!alreadyAuthed) {
-      const signIn = page.getByRole('button', { name: 'Sign in' });
+      const signIn = page.getByTestId('sign-in-button');
       await expect(signIn).toBeVisible({ timeout: 15_000 });
       await signIn.click();
 
@@ -83,11 +83,23 @@ test.describe('users (platform admin)', () => {
       );
     }
 
+    // The redesigned users screen renders summary stats — the total-users
+    // stat must be present and non-empty.
+    await expect(page.getByTestId('stat-users')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('stat-users')).not.toBeEmpty();
+
     // The seeded test user must be present.
+    const testRow = page.getByTestId('user-row-test@leartech.com');
+    await expect(testRow, 'seeded test@leartech.com user not shown').toBeVisible({
+      timeout: 15_000,
+    });
+
+    // Seeded test@ is active by default: its row shows an "Active" status
+    // badge and its toggle offers to "Suspend" access.
+    await expect(testRow).toContainText('Active');
     await expect(
-      page.getByTestId('user-row-test@leartech.com'),
-      'seeded test@leartech.com user not shown',
-    ).toBeVisible({ timeout: 15_000 });
+      page.getByTestId('user-active-toggle-test@leartech.com'),
+    ).toContainText('Suspend');
 
     // Change test@'s role and confirm no error surfaces.
     await page
