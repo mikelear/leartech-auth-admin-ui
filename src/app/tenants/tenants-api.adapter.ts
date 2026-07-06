@@ -1,11 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import {
-  AdminService,
-  ModelsAdminCreateTenantRequest,
-  ModelsTenant,
-} from '@mikelear/leartech-auth-service-angular';
+import { AdminService } from '@mikelear/leartech-auth-service-angular';
+import { CreateTenantRequest, Tenant } from '../models';
 
 /**
  * Thin adapter over the generated auth-service SDK's AdminService.
@@ -25,18 +22,23 @@ export class TenantsApiAdapter {
   private readonly admin = inject(AdminService);
 
   /** List all tenants (platform-admin). Unwraps the `{ tenants: [...] }` body. */
-  listTenants(): Observable<ModelsTenant[]> {
+  listTenants(): Observable<Tenant[]> {
     return this.admin
       .adminListTenants()
       .pipe(
         map(
-          (res) => (res as { tenants?: ModelsTenant[] })?.tenants ?? [],
+          (res) => (res as { tenants?: Tenant[] })?.tenants ?? [],
         ),
       );
   }
 
   /** Create a tenant (platform-admin). */
-  createTenant(req: ModelsAdminCreateTenantRequest): Observable<ModelsTenant> {
+  createTenant(req: CreateTenantRequest): Observable<Tenant> {
     return this.admin.adminCreateTenant(req);
+  }
+
+  /** Delete a tenant by id (platform-admin). The platform tenant is 409-guarded server-side. */
+  deleteTenant(id: string): Observable<void> {
+    return this.admin.adminDeleteTenant(id).pipe(map(() => undefined));
   }
 }

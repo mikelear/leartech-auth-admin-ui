@@ -107,5 +107,19 @@ test.describe('tenants (platform admin)', () => {
       'duplicate tenant create did not surface an error',
     ).toBeVisible({ timeout: 15_000 });
     await expect(dupError).toContainText(/already exists/i);
+
+    // Delete the tenant we created: proves the Delete action end to end AND
+    // cleans up after this run (no e2e-admin-* accumulation). Inline confirm:
+    // Delete → Confirm → the row disappears and the (dup) error clears.
+    await page.getByTestId('tenant-delete-' + name).click();
+    await page.getByTestId('tenant-delete-confirm-' + name).click();
+    await expect(
+      page.getByTestId('tenant-row-' + name),
+      'tenant row should be gone after delete',
+    ).toHaveCount(0, { timeout: 15_000 });
+    await expect(
+      page.getByTestId('tenants-error'),
+      'a successful delete should clear the error',
+    ).toHaveCount(0);
   });
 });

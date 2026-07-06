@@ -1,7 +1,7 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { ModelsUser } from '@mikelear/leartech-auth-service-angular';
+import { User } from '../models';
 import { UsersApiAdapter } from './users-api.adapter';
 
 const ROLES = ['member', 'tenant_admin', 'platform_admin'] as const;
@@ -115,7 +115,7 @@ export class UsersComponent implements OnInit {
   private readonly api = inject(UsersApiAdapter);
 
   readonly roles = ROLES;
-  readonly users = signal<ModelsUser[]>([]);
+  readonly users = signal<User[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly busyId = signal<string | null>(null);
@@ -146,7 +146,7 @@ export class UsersComponent implements OnInit {
     }
   }
 
-  async changeRole(user: ModelsUser, role: string): Promise<void> {
+  async changeRole(user: User, role: string): Promise<void> {
     const id = user.id;
     if (!id || role === user.role || this.busyId()) {
       return;
@@ -163,7 +163,7 @@ export class UsersComponent implements OnInit {
     }
   }
 
-  async toggleActive(user: ModelsUser): Promise<void> {
+  async toggleActive(user: User): Promise<void> {
     const id = user.id;
     if (!id || this.busyId()) {
       return;

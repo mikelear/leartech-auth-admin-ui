@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { ModelsTenant } from '@mikelear/leartech-auth-service-angular';
+import { Tenant } from '../models';
 import { TenantsApiAdapter } from './tenants-api.adapter';
 
 /**
@@ -36,7 +36,7 @@ import { TenantsApiAdapter } from './tenants-api.adapter';
           <div class="tscroll">
             <table data-testid="tenants-table">
               <thead>
-                <tr><th>Name</th><th>Tenant ID</th><th>Created</th></tr>
+                <tr><th>Name</th><th>Tenant ID</th><th>Created</th><th class="r">Actions</th></tr>
               </thead>
               <tbody>
                 @for (t of tenants(); track t.id) {
@@ -47,9 +47,34 @@ import { TenantsApiAdapter } from './tenants-api.adapter';
                     </td>
                     <td class="id">{{ t.id }}</td>
                     <td class="when">{{ shortDate(t.createdAt) }}</td>
+                    <td class="r">
+                      @if (t.id !== platformTenantId) {
+                        <div class="acts">
+                          @if (confirmingId() === t.id) {
+                            <button
+                              type="button"
+                              class="rowbtn warn"
+                              [attr.data-testid]="'tenant-delete-confirm-' + t.name"
+                              (click)="remove(t)"
+                              [disabled]="deletingId() === t.id"
+                            >{{ deletingId() === t.id ? 'Deleting…' : 'Confirm' }}</button>
+                            <button type="button" class="rowbtn" (click)="confirmingId.set(null)" [disabled]="deletingId() === t.id">Cancel</button>
+                          } @else {
+                            <button
+                              type="button"
+                              class="rowbtn warn"
+                              [attr.data-testid]="'tenant-delete-' + t.name"
+                              (click)="confirmingId.set(t.id ?? null)"
+                            >Delete</button>
+                          }
+                        </div>
+                      } @else {
+                        <span class="muted" title="The platform tenant cannot be deleted">—</span>
+                      }
+                    </td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="3" class="muted" data-testid="tenants-empty">No tenants yet — create the first one below.</td></tr>
+                  <tr><td colspan="4" class="muted" data-testid="tenants-empty">No tenants yet — create the first one below.</td></tr>
                 }
               </tbody>
             </table>
@@ -92,12 +117,17 @@ import { TenantsApiAdapter } from './tenants-api.adapter';
 export class TenantsComponent implements OnInit {
   private readonly api = inject(TenantsApiAdapter);
 
-  readonly tenants = signal<ModelsTenant[]>([]);
+  /** The platform ("leartech") tenant — cannot be deleted (409 server-side); no Delete button. */
+  readonly platformTenantId = '00000000-0000-0000-0000-000000000001';
+
+  readonly tenants = signal<Tenant[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly newName = signal('');
   readonly newDisplayName = signal('');
   readonly creating = signal(false);
+  readonly confirmingId = signal<string | null>(null);
+  readonly deletingId = signal<string | null>(null);
 
   ngOnInit(): void {
     void this.reload();
@@ -136,6 +166,25 @@ export class TenantsComponent implements OnInit {
       this.error.set(this.describe(e));
     } finally {
       this.creating.set(false);
+    }
+  }
+
+  /** Delete a tenant (after inline confirm). Reloads on success. */
+  async remove(t: Tenant): Promise<void> {
+    const id = t.id;
+    if (!id || this.deletingId()) {
+      return;
+    }
+    this.deletingId.set(id);
+    this.error.set(null);
+    try {
+      await firstValueFrom(this.api.deleteTenant(id));
+      this.confirmingId.set(null);
+      await this.reload();
+    } catch (e) {
+      this.error.set(this.describe(e));
+    } finally {
+      this.deletingId.set(null);
     }
   }
 

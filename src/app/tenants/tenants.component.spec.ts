@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
-import { ModelsTenant } from '@mikelear/leartech-auth-service-angular';
+import { Tenant } from '../models';
 import { TenantsComponent } from './tenants.component';
 import { TenantsApiAdapter } from './tenants-api.adapter';
 
@@ -34,9 +34,10 @@ describe('TenantsComponent', () => {
     api = jasmine.createSpyObj<TenantsApiAdapter>('TenantsApiAdapter', [
       'listTenants',
       'createTenant',
+      'deleteTenant',
     ]);
     api.listTenants.and.returnValue(
-      of([{ id: 't1', name: 'acme', displayName: 'Acme' }] as ModelsTenant[]),
+      of([{ id: 't1', name: 'acme', displayName: 'Acme' }] as Tenant[]),
     );
     TestBed.configureTestingModule({
       imports: [TenantsComponent],
@@ -55,7 +56,7 @@ describe('TenantsComponent', () => {
 
   it('creates a tenant then reloads the list', async () => {
     api.createTenant.and.returnValue(
-      of({ id: 't2', name: 'globex' } as ModelsTenant),
+      of({ id: 't2', name: 'globex' } as Tenant),
     );
     const c = await setup();
     c.newName.set('globex');
@@ -99,9 +100,31 @@ describe('TenantsComponent', () => {
   });
 
   it('renders empty (no rows, no error) when there are no tenants', async () => {
-    api.listTenants.and.returnValue(of([] as ModelsTenant[]));
+    api.listTenants.and.returnValue(of([] as Tenant[]));
     const c = await setup();
     expect(c.tenants().length).toBe(0);
     expect(c.error()).toBeNull();
+  });
+
+  it('deletes a tenant then reloads + clears the confirm state', async () => {
+    api.deleteTenant.and.returnValue(of(undefined));
+    const c = await setup();
+    c.confirmingId.set('t1');
+    await c.remove({ id: 't1', name: 'acme' } as Tenant);
+    expect(api.deleteTenant).toHaveBeenCalledWith('t1');
+    expect(api.listTenants).toHaveBeenCalledTimes(2); // init + after delete
+    expect(c.confirmingId()).toBeNull();
+    expect(c.error()).toBeNull();
+  });
+
+  it('surfaces a delete error and clears the busy state', async () => {
+    // The platform-tenant 409 is unreachable from the UI (its Delete button is
+    // hidden), so exercise a reachable failure (500) — the message surfaces and
+    // deletingId resets so the row isn't stuck.
+    api.deleteTenant.and.returnValue(throwError(() => ({ status: 500, error: { error: 'boom' } })));
+    const c = await setup();
+    await c.remove({ id: 't1', name: 'acme' } as Tenant);
+    expect(c.error()).toContain('boom');
+    expect(c.deletingId()).toBeNull();
   });
 });
