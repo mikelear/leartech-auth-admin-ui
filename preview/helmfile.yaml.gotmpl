@@ -159,6 +159,12 @@ releases:
   # exact race that failed 07-tenants (hydra was Ready, auth-ui wasn't).
   - name: httpProbes[1]
     value: 'https://{{ $uiHost }}/'
+  # And wait for auth-service to be Ready (it restarts a couple times on cold
+  # start). Without this, e2e can start before auth-service has warmed its JWKS
+  # cache from Hydra, so the admin API rejects the (valid) bearer with 401 — the
+  # flake that failed GCP 07-tenants on pr-9 and pr-11 (AZ warmed in time).
+  - name: httpProbes[2]
+    value: 'https://{{ $authHost }}/health/ready'
 
 # Preview gives you:
 #   https://leartech-auth-admin-ui-prN.<domain>  → admin portal (this PR's build)
