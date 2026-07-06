@@ -59,7 +59,7 @@ releases:
         nginx.ingress.kubernetes.io/enable-cors: "true"
         nginx.ingress.kubernetes.io/cors-allow-origin: 'https://{{ $adminHost }}, https://{{ $uiHost }}'
         nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
-        nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, OPTIONS"
+        nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, PATCH, DELETE, OPTIONS"
         nginx.ingress.kubernetes.io/cors-allow-headers: "Content-Type, Authorization"
   - jxRequirements:
       ingress:
