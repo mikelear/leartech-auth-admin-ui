@@ -1,5 +1,4 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { ModelsTenant } from '@mikelear/leartech-auth-service-angular';
@@ -7,87 +6,88 @@ import { TenantsApiAdapter } from './tenants-api.adapter';
 
 /**
  * Tenants — platform-admin screen. Lists and creates tenants through the
- * generated auth-service SDK (`AdminService`), which routes via Angular
- * HttpClient so leartech-common's AuthInterceptor injects the platform-admin
- * bearer automatically — no per-call token handling. Requires the PlatformAdmin
- * permission; a tenant-admin (or any non-platform admin) gets 403, surfaced here
- * as an error rather than a blank screen.
+ * generated auth-service SDK (via TenantsApiAdapter). Requires the PlatformAdmin
+ * permission; a non-platform admin gets 403, surfaced here as an error.
  */
 @Component({
   selector: 'app-tenants',
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   template: `
-    <section class="tenants" data-testid="tenants-page">
-      <h2>Tenants</h2>
-      <p class="lead">
-        Platform-admin only. Every action calls leartech-auth-service
-        <code>/api/auth/admin/tenants</code> via the generated SDK.
-      </p>
-
-      <form class="create" (ngSubmit)="create()">
-        <input
-          data-testid="tenant-name-input"
-          name="name"
-          placeholder="tenant name (unique, lower-case)"
-          [ngModel]="newName()"
-          (ngModelChange)="newName.set($event)"
-          [disabled]="creating()"
-        />
-        <input
-          data-testid="tenant-display-input"
-          name="displayName"
-          placeholder="display name (optional)"
-          [ngModel]="newDisplayName()"
-          (ngModelChange)="newDisplayName.set($event)"
-          [disabled]="creating()"
-        />
-        <button
-          type="submit"
-          data-testid="tenant-create-button"
-          [disabled]="creating() || !newName().trim()"
-        >
-          {{ creating() ? 'Creating…' : 'Create tenant' }}
-        </button>
-      </form>
+    <section class="wrap" data-testid="tenants-page">
+      <div class="head">
+        <div>
+          <h1>Tenants</h1>
+          <p>Every organization on the platform. Only platform admins can view or create tenants.</p>
+        </div>
+      </div>
 
       @if (error()) {
-        <p class="error" data-testid="tenants-error">{{ error() }}</p>
+        <p class="error-note" data-testid="tenants-error">{{ error() }}</p>
       }
 
-      @if (loading()) {
-        <p data-testid="tenants-loading">Loading…</p>
-      } @else {
-        <table data-testid="tenants-table">
-          <thead>
-            <tr><th>Name</th><th>Display name</th><th>ID</th></tr>
-          </thead>
-          <tbody>
-            @for (t of tenants(); track t.id) {
-              <tr [attr.data-testid]="'tenant-row-' + t.name">
-                <td>{{ t.name }}</td>
-                <td>{{ t.displayName }}</td>
-                <td><code>{{ t.id }}</code></td>
-              </tr>
-            } @empty {
-              <tr><td colspan="3" data-testid="tenants-empty">No tenants.</td></tr>
-            }
-          </tbody>
-        </table>
-        <p class="count" data-testid="tenants-count">{{ tenants().length }} tenant(s)</p>
-      }
+      <div class="card">
+        <div class="card-top">
+          <span class="eyebrow">All tenants <span class="count" data-testid="tenants-count">{{ tenants().length }}</span></span>
+        </div>
+
+        @if (loading()) {
+          <p class="muted" style="padding:16px 18px" data-testid="tenants-loading">Loading tenants…</p>
+        } @else {
+          <div class="tscroll">
+            <table data-testid="tenants-table">
+              <thead>
+                <tr><th>Name</th><th>Tenant ID</th><th>Created</th></tr>
+              </thead>
+              <tbody>
+                @for (t of tenants(); track t.id) {
+                  <tr [attr.data-testid]="'tenant-row-' + t.name">
+                    <td>
+                      <div class="name">{{ t.displayName || t.name }}</div>
+                      <div class="sub">{{ t.name }}</div>
+                    </td>
+                    <td class="id">{{ t.id }}</td>
+                    <td class="when">{{ shortDate(t.createdAt) }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="3" class="muted" data-testid="tenants-empty">No tenants yet — create the first one below.</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        <form class="create" (ngSubmit)="create()">
+          <span class="lab">New tenant</span>
+          <input
+            class="wide"
+            data-testid="tenant-name-input"
+            name="name"
+            placeholder="tenant name (unique, lower-case)"
+            [ngModel]="newName()"
+            (ngModelChange)="newName.set($event)"
+            [disabled]="creating()"
+          />
+          <input
+            class="wide"
+            data-testid="tenant-display-input"
+            name="displayName"
+            placeholder="display name (optional)"
+            [ngModel]="newDisplayName()"
+            (ngModelChange)="newDisplayName.set($event)"
+            [disabled]="creating()"
+          />
+          <button
+            type="submit"
+            class="btn primary"
+            data-testid="tenant-create-button"
+            [disabled]="creating() || !newName().trim()"
+          >
+            {{ creating() ? 'Creating…' : 'Create tenant' }}
+          </button>
+        </form>
+      </div>
     </section>
   `,
-  styles: [
-    `
-      .tenants { max-width: 900px; }
-      .create { display: flex; gap: 0.5rem; margin: 1rem 0; flex-wrap: wrap; }
-      .create input { flex: 1; min-width: 12rem; padding: 0.4rem; }
-      table { width: 100%; border-collapse: collapse; }
-      th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid #ddd; }
-      .error { color: #b00020; }
-      .count { color: #666; font-size: 0.9rem; }
-    `,
-  ],
 })
 export class TenantsComponent implements OnInit {
   private readonly api = inject(TenantsApiAdapter);
@@ -137,6 +137,11 @@ export class TenantsComponent implements OnInit {
     } finally {
       this.creating.set(false);
     }
+  }
+
+  /** ISO timestamp → YYYY-MM-DD (no date pipe needed). */
+  shortDate(iso?: string): string {
+    return iso ? iso.slice(0, 10) : '—';
   }
 
   /** Turn an HttpErrorResponse into an operator-friendly message. */
