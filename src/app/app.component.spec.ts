@@ -4,14 +4,9 @@ import { OidcSecurityService } from 'angular-auth-oidc-client';
 import { of, throwError } from 'rxjs';
 import { AppComponent } from './app.component';
 
-/** Build a fake JWT the component can decode (header.payload.sig). */
-function jwt(payload: object): string {
-  return `h.${btoa(JSON.stringify(payload))}.s`;
-}
-
 const anon: Partial<OidcSecurityService> = {
   isAuthenticated$: of({ isAuthenticated: false, allConfigsAuthenticated: [] }) as never,
-  getAccessToken: () => of('') as never,
+  userData$: of({ userData: null, allUserData: [] }) as never,
   authorize: () => undefined,
   logoff: () => of(null) as never,
   logoffLocal: () => of(null) as never,
@@ -40,13 +35,14 @@ describe('AppComponent', () => {
     const f = await setup({
       ...anon,
       isAuthenticated$: of({ isAuthenticated: true, allConfigsAuthenticated: [] }) as never,
-      getAccessToken: () =>
-        of(
-          jwt({
-            sub: 'user-test-platform',
-            ext: { email: 'platform@leartech.com', Permissions: ['User', 'Admin', 'PlatformAdmin'] },
-          }),
-        ) as never,
+      userData$: of({
+        userData: {
+          sub: 'user-test-platform',
+          email: 'platform@leartech.com',
+          ext: { Permissions: ['User', 'Admin', 'PlatformAdmin'] },
+        },
+        allUserData: [],
+      }) as never,
     });
     const el = f.nativeElement as HTMLElement;
     expect(el.querySelector('[data-testid="authenticated-page"]')).not.toBeNull();

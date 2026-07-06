@@ -89,7 +89,11 @@ export class AppComponent implements OnInit {
   readonly tokenPayload = signal<TokenClaims | null>(null);
 
   readonly userEmail = computed(
-    () => this.tokenPayload()?.ext?.email ?? this.tokenPayload()?.email ?? 'unknown',
+    () =>
+      this.tokenPayload()?.email ??
+      this.tokenPayload()?.ext?.email ??
+      this.tokenPayload()?.sub ??
+      'unknown',
   );
   readonly userInitial = computed(() => (this.userEmail()[0] ?? '?').toUpperCase());
   readonly roleLabel = computed(() => {
@@ -102,23 +106,12 @@ export class AppComponent implements OnInit {
   ngOnInit(): void {
     this.oidc.isAuthenticated$.subscribe(({ isAuthenticated }) => {
       this.isAuthenticated.set(isAuthenticated);
-      if (!isAuthenticated) {
-        this.tokenPayload.set(null);
-        return;
-      }
-      this.oidc.getAccessToken().subscribe((token) => {
-        if (!token) {
-          this.tokenPayload.set(null);
-          return;
-        }
-        try {
-          const payload = token.split('.')[1];
-          const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
-          this.tokenPayload.set(JSON.parse(atob(normalized)) as TokenClaims);
-        } catch {
-          this.tokenPayload.set(null);
-        }
-      });
+    });
+    // Identity comes from userData (the id_token) — it carries `email` plus the
+    // nested `ext` claims. The access token intentionally omits email (flat
+    // custom claims only), so decoding it showed "unknown" in staging.
+    this.oidc.userData$.subscribe(({ userData }) => {
+      this.tokenPayload.set((userData as TokenClaims | null) ?? null);
     });
   }
 
