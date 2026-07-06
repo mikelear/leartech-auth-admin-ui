@@ -34,7 +34,7 @@ test.describe('tenants (platform admin)', () => {
     const alreadyAuthed =
       (await page.locator('[data-testid="authenticated-page"]').count()) > 0;
     if (!alreadyAuthed) {
-      const signIn = page.getByRole('button', { name: 'Sign in' });
+      const signIn = page.getByTestId('sign-in-button');
       await expect(signIn).toBeVisible({ timeout: 15_000 });
       await signIn.click();
 
@@ -93,5 +93,19 @@ test.describe('tenants (platform admin)', () => {
       page.getByTestId('tenant-row-' + name),
       'created tenant not shown after create',
     ).toBeVisible({ timeout: 15_000 });
+
+    // Unhappy path: submitting the SAME name again is a guaranteed duplicate.
+    // The admin API returns 409 and the UI must surface it as a clear
+    // "already exists" error rather than silently swallowing it.
+    await page.getByTestId('tenant-name-input').fill(name);
+    await page.getByTestId('tenant-display-input').fill('E2E Admin UI dup');
+    await page.getByTestId('tenant-create-button').click();
+
+    const dupError = page.getByTestId('tenants-error');
+    await expect(
+      dupError,
+      'duplicate tenant create did not surface an error',
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(dupError).toContainText(/already exists/i);
   });
 });

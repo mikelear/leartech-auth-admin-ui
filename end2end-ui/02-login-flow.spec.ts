@@ -34,14 +34,16 @@ test.describe('login flow', () => {
     // redirects to Hydra → /oauth2/auth → login_challenge → auth-ui
     // /login. We click here rather than relying on auto-login so the
     // template stays a normal "anonymous home → sign in" SPA.
-    await page.goto('/', { waitUntil: 'networkidle', timeout: 20_000 });
+    await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 20_000 });
+
+    const email = process.env['USER_EMAIL'] || 'test@leartech.com';
 
     // If a previous test in this run left the session active, skip
     // straight to the assertions.
     const alreadyAuthed = await page.locator('[data-testid="authenticated-page"]').count() > 0;
     if (!alreadyAuthed) {
-      const signIn = page.getByRole('button', { name: 'Sign in' });
-      await expect(signIn, 'Sign in button missing from landing page').toBeVisible();
+      const signIn = page.getByTestId('sign-in-button');
+      await expect(signIn, 'sign-in-button missing from landing page').toBeVisible();
       await signIn.click();
 
       // After the click we should land on auth-ui's /login under
@@ -52,7 +54,6 @@ test.describe('login flow', () => {
       await expect(emailField, 'login form not reached — check setup-auth.sh registered this template\'s redirect_uri on frontend-services').toBeVisible({ timeout: 15_000 });
       await expect(passwordField).toBeVisible();
 
-      const email = process.env['USER_EMAIL'] || 'test@leartech.com';
       const password = process.env['USER_PASSWORD'] || 'Test123!';
       await emailField.fill(email);
       await passwordField.fill(password);
@@ -71,16 +72,20 @@ test.describe('login flow', () => {
       await page.waitForTimeout(2_000);
     }
 
-    // Structural assertions on the authenticated state rendered by
-    // AppComponent. Locator-based (not string-includes) so partial
-    // matches like 'Not authenticated' don't false-pass.
+    // Structural assertions on the redesigned admin console shell rendered
+    // by AppComponent: sidebar nav + topbar identity. Locator-based so
+    // partial text matches don't false-pass.
     const authenticatedPage = page.locator('[data-testid="authenticated-page"]');
-    await expect(authenticatedPage, 'authenticated-page card not visible after login').toBeVisible({ timeout: 10_000 });
-    await expect(page.getByRole('heading', { name: 'Authenticated' })).toBeVisible();
+    await expect(authenticatedPage, 'authenticated-page shell not visible after login').toBeVisible({ timeout: 10_000 });
     await expect(page.locator('input[type="password"]')).toHaveCount(0);
 
-    // The token-payload <pre> must render — proves we decoded the
-    // access_token and the audience-bound claims are visible.
-    await expect(page.getByTestId('token-payload')).toBeVisible();
+    // Sidebar with both nav links must render.
+    await expect(page.getByTestId('app-sidebar')).toBeVisible();
+    await expect(page.getByTestId('nav-tenants')).toBeVisible();
+    await expect(page.getByTestId('nav-users')).toBeVisible();
+
+    // Topbar identity must reflect the email we logged in with — proves the
+    // access_token was decoded and the identity surfaced in the shell.
+    await expect(page.getByTestId('user-email')).toContainText(email);
   });
 });
