@@ -76,7 +76,7 @@ const ROLES = ['member', 'tenant_admin', 'platform_admin'] as const;
                             class="chip toggle"
                             [class.on]="hasPerm(u, p)"
                             [attr.data-testid]="'user-perm-' + p + '-' + u.email"
-                            [attr.data-on]="hasPerm(u, p)"
+                            [attr.data-on]="hasPerm(u, p) ? 'true' : 'false'"
                             (click)="togglePermission(u, p)"
                             [disabled]="busyId() === u.id"
                             [title]="(hasPerm(u, p) ? 'Remove ' : 'Grant ') + p"
@@ -91,14 +91,14 @@ const ROLES = ['member', 'tenant_admin', 'platform_admin'] as const;
                           class="fbadge"
                           [class.on]="!!u.has2FA"
                           [attr.data-testid]="'user-2fa-' + u.email"
-                          [attr.data-enabled]="!!u.has2FA"
+                          [attr.data-enabled]="u.has2FA ? 'true' : 'false'"
                           [title]="u.has2FA ? '2FA enabled' : 'No 2FA'"
                         >2FA</span>
                         <span
                           class="fbadge"
                           [class.on]="!!u.hasPasskey"
                           [attr.data-testid]="'user-passkey-' + u.email"
-                          [attr.data-enabled]="!!u.hasPasskey"
+                          [attr.data-enabled]="u.hasPasskey ? 'true' : 'false'"
                           [title]="u.hasPasskey ? 'Passkey registered' : 'No passkey'"
                         >Passkey</span>
                       </div>
