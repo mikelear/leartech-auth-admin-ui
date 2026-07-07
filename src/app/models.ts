@@ -10,6 +10,10 @@
  */
 export type {
   Tenant,
-  User,
+  // The admin user carries derived auth-factor status (has2FA/hasPasskey) — the
+  // enriched AdminUserResponse IS the domain user for this app. It's a superset
+  // of the raw SDK `User` (all fields optional), so mutation responses that
+  // return the raw user remain assignable.
+  AdminUserResponse as User,
   AdminCreateTenantRequest as CreateTenantRequest,
 } from '@mikelear/leartech-auth-service-angular';

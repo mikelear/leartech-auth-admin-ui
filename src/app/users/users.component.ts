@@ -46,7 +46,7 @@ const ROLES = ['member', 'tenant_admin', 'platform_admin'] as const;
           <div class="tscroll">
             <table data-testid="users-table">
               <thead>
-                <tr><th>User</th><th>Role</th><th>Permissions</th><th>Tenant</th><th>Status</th><th class="r">Actions</th></tr>
+                <tr><th>User</th><th>Role</th><th>Permissions</th><th>Security</th><th>Tenant</th><th>Status</th><th class="r">Actions</th></tr>
               </thead>
               <tbody>
                 @for (u of users(); track u.id) {
@@ -77,6 +77,24 @@ const ROLES = ['member', 'tenant_admin', 'platform_admin'] as const;
                         <span class="muted">—</span>
                       }
                     </td>
+                    <td>
+                      <div class="factors">
+                        <span
+                          class="fbadge"
+                          [class.on]="!!u.has2FA"
+                          [attr.data-testid]="'user-2fa-' + u.email"
+                          [attr.data-enabled]="!!u.has2FA"
+                          [title]="u.has2FA ? '2FA enabled' : 'No 2FA'"
+                        >2FA</span>
+                        <span
+                          class="fbadge"
+                          [class.on]="!!u.hasPasskey"
+                          [attr.data-testid]="'user-passkey-' + u.email"
+                          [attr.data-enabled]="!!u.hasPasskey"
+                          [title]="u.hasPasskey ? 'Passkey registered' : 'No passkey'"
+                        >Passkey</span>
+                      </div>
+                    </td>
                     <td><span class="pill member">{{ shortTenant(u.tenantId) }}</span></td>
                     <td>
                       @if (u.active !== false) {
@@ -101,7 +119,7 @@ const ROLES = ['member', 'tenant_admin', 'platform_admin'] as const;
                     </td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="6" class="muted" data-testid="users-empty">No users.</td></tr>
+                  <tr><td colspan="7" class="muted" data-testid="users-empty">No users.</td></tr>
                 }
               </tbody>
             </table>
@@ -110,6 +128,20 @@ const ROLES = ['member', 'tenant_admin', 'platform_admin'] as const;
       </div>
     </section>
   `,
+  styles: [
+    `
+      .factors { display: flex; gap: 6px; flex-wrap: wrap; }
+      .fbadge {
+        font-size: 11px; font-weight: 600; line-height: 1;
+        padding: 3px 8px; border-radius: 999px;
+        border: 1px solid #d0d7de; color: #8b949e;
+        background: transparent; letter-spacing: 0.02em; opacity: 0.6;
+      }
+      .fbadge.on {
+        color: #0f7b3f; border-color: #9ae6b4; background: #eafff1; opacity: 1;
+      }
+    `,
+  ],
 })
 export class UsersComponent implements OnInit {
   private readonly api = inject(UsersApiAdapter);
