@@ -45,4 +45,39 @@ export class UsersApiAdapter {
       ? this.admin.adminActivateUser(id)
       : this.admin.adminDeactivateUser(id);
   }
+
+  /** Fetch one user (with derived 2FA/passkey status). */
+  getUser(id: string): Observable<User> {
+    return this.admin.adminGetUser(id);
+  }
+
+  /** Create a user (invite-pending — no credential yet). */
+  createUser(req: {
+    email: string;
+    displayName?: string;
+    role?: string;
+    permissions?: string[];
+  }): Observable<User> {
+    return this.admin.adminCreateUser(req);
+  }
+
+  /** Update a user's editable profile (display name). */
+  updateUser(id: string, displayName: string): Observable<User> {
+    return this.admin.adminUpdateUser(id, { displayName });
+  }
+
+  /** Delete a user (hard delete; cascades to their 2FA/passkeys). */
+  deleteUser(id: string): Observable<unknown> {
+    return this.admin.adminDeleteUser(id);
+  }
+
+  /** Reset a user's 2FA enrolment (they re-enrol). */
+  resetTwoFactor(id: string): Observable<unknown> {
+    return this.admin.adminResetTwoFactor(id);
+  }
+
+  /** Reset all of a user's passkeys (they re-register). */
+  resetPasskeys(id: string): Observable<unknown> {
+    return this.admin.adminResetPasskeys(id);
+  }
 }

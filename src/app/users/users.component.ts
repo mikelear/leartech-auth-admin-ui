@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { User } from '../models';
 import { UsersApiAdapter } from './users-api.adapter';
+import { UserDrawerComponent } from './user-drawer.component';
 
 const ROLES = ['member', 'tenant_admin', 'platform_admin'] as const;
 
@@ -14,7 +15,7 @@ const ROLES = ['member', 'tenant_admin', 'platform_admin'] as const;
  */
 @Component({
   selector: 'app-users',
-  imports: [FormsModule],
+  imports: [FormsModule, UserDrawerComponent],
   template: `
     <section class="wrap" data-testid="users-page">
       <div class="head">
@@ -22,6 +23,7 @@ const ROLES = ['member', 'tenant_admin', 'platform_admin'] as const;
           <h1>Users</h1>
           <p>People with access to the platform. Change a role or suspend access — changes take effect on the user's next token.</p>
         </div>
+        <button type="button" class="newbtn" (click)="openCreate()" data-testid="new-user-button">＋ New user</button>
       </div>
 
       @if (error()) {
@@ -116,6 +118,15 @@ const ROLES = ['member', 'tenant_admin', 'platform_admin'] as const;
                         <button
                           type="button"
                           class="rowbtn"
+                          [attr.data-testid]="'user-details-' + u.email"
+                          (click)="openEdit(u)"
+                          [disabled]="busyId() === u.id"
+                        >
+                          Details
+                        </button>
+                        <button
+                          type="button"
+                          class="rowbtn"
                           [class.warn]="u.active !== false"
                           [attr.data-testid]="'user-active-toggle-' + u.email"
                           (click)="toggleActive(u)"
@@ -135,9 +146,20 @@ const ROLES = ['member', 'tenant_admin', 'platform_admin'] as const;
         }
       </div>
     </section>
+
+    @if (drawerUser() !== undefined) {
+      <app-user-drawer
+        [user]="drawerUser() ?? null"
+        (saved)="onDrawerSaved()"
+        (closed)="onDrawerClosed()"
+      />
+    }
   `,
   styles: [
     `
+      .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+      .newbtn { background: #5a57e6; color: #fff; border: 0; border-radius: 9px; padding: 9px 15px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; box-shadow: 0 1px 2px rgba(74,74,214,0.25); }
+      .acts { display: flex; gap: 6px; justify-content: flex-end; }
       .factors { display: flex; gap: 6px; flex-wrap: wrap; }
       .fbadge {
         font-size: 11px; font-weight: 600; line-height: 1;
@@ -172,6 +194,8 @@ export class UsersComponent implements OnInit {
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly busyId = signal<string | null>(null);
+  // undefined = drawer closed · null = create mode · a User = edit/detail.
+  readonly drawerUser = signal<User | null | undefined>(undefined);
 
   readonly platformAdmins = computed(
     () => this.users().filter((u) => u.role === 'platform_admin').length,
@@ -185,6 +209,20 @@ export class UsersComponent implements OnInit {
 
   ngOnInit(): void {
     void this.reload();
+  }
+
+  openCreate(): void {
+    this.drawerUser.set(null);
+  }
+  openEdit(user: User): void {
+    this.drawerUser.set(user);
+  }
+  onDrawerSaved(): void {
+    this.drawerUser.set(undefined);
+    void this.reload();
+  }
+  onDrawerClosed(): void {
+    this.drawerUser.set(undefined);
   }
 
   async reload(): Promise<void> {
