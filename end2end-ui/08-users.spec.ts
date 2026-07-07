@@ -116,14 +116,16 @@ test.describe('users (platform admin)', () => {
       'changing role errored',
     ).toBe(0);
 
-    // #14: the Security column shows 2FA + passkey status badges per user. The
-    // seeded test@ has neither enrolled, so both render disabled (data-enabled=false).
+    // #14: the Security column shows a 2FA + passkey status badge per user.
+    // test@'s enrolment state is MUTABLE on persistent staging (unlike a fresh
+    // preview), so assert each badge renders and carries a valid boolean —
+    // value-agnostic, not a fixed 'false'.
     const twofa = page.getByTestId('user-2fa-test@leartech.com');
     const passkey = page.getByTestId('user-passkey-test@leartech.com');
     await expect(twofa, '2FA badge missing').toBeVisible({ timeout: 10_000 });
     await expect(passkey, 'passkey badge missing').toBeVisible();
-    await expect(twofa).toHaveAttribute('data-enabled', 'false');
-    await expect(passkey).toHaveAttribute('data-enabled', 'false');
+    await expect(twofa).toHaveAttribute('data-enabled', /^(true|false)$/);
+    await expect(passkey).toHaveAttribute('data-enabled', /^(true|false)$/);
 
     // #16: permissions are editable. Toggle 'Admin' on test@, confirm it flips,
     // then toggle back so the fixture is left as found.
