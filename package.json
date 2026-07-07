@@ -19,7 +19,7 @@
     "@angular/platform-browser": "^20.0.0",
     "@angular/platform-browser-dynamic": "^20.0.0",
     "@angular/router": "^20.0.0",
-    "@mikelear/leartech-auth-service-angular": "^0.1.77",
+    "@mikelear/leartech-auth-service-angular": "^0.1.79",
     "@mikelear/leartech-common": "^0.4.0",
     "angular-auth-oidc-client": "^18.0.0",
     "rxjs": "~7.8.0",

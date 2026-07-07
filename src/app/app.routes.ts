@@ -18,4 +18,9 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./users/users.component').then((m) => m.UsersComponent),
   },
+  // Default landing for the authenticated console: Users is the home screen
+  // (it carries the stat tiles). Empty path previously rendered a bare shell.
+  { path: '', redirectTo: 'users', pathMatch: 'full' },
+  // Unknown paths fall back to the home screen rather than a blank outlet.
+  { path: '**', redirectTo: 'users' },
 ];

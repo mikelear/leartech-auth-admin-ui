@@ -34,6 +34,11 @@ export class UsersApiAdapter {
     return this.admin.adminSetUserRole(id, { role });
   }
 
+  /** Replace a user's permissions (platform-admin). Wraps as `{ permissions }`. */
+  setPermissions(id: string, permissions: string[]): Observable<User> {
+    return this.admin.adminSetUserPermissions(id, { permissions });
+  }
+
   /** Activate or deactivate a user (platform-admin). */
   setActive(id: string, active: boolean): Observable<User> {
     return active
