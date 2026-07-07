@@ -145,5 +145,27 @@ test.describe('users (platform admin)', () => {
       await page.getByTestId('users-error').count(),
       'editing permission errored',
     ).toBe(0);
+
+    // Drawer lifecycle: create a throwaway via "New user", then delete it via its
+    // Details drawer — self-cleaning, exercises create + delete end to end.
+    const email = `drawer-${Date.now()}@leartech.com`;
+    await page.getByTestId('new-user-button').click();
+    await expect(page.getByTestId('user-drawer')).toBeVisible();
+    await page.getByTestId('drawer-email').fill(email);
+    await page.getByTestId('drawer-displayname').fill('Drawer Test');
+    await page.getByTestId('drawer-save').click();
+    await expect(
+      page.getByTestId('user-row-' + email),
+      'created user did not appear',
+    ).toBeVisible({ timeout: 15_000 });
+
+    await page.getByTestId('user-details-' + email).click();
+    await expect(page.getByTestId('user-drawer')).toBeVisible();
+    await page.getByTestId('drawer-delete').click();
+    await page.getByTestId('drawer-delete-confirm').click();
+    await expect(
+      page.getByTestId('user-row-' + email),
+      'deleted user still listed',
+    ).toHaveCount(0, { timeout: 15_000 });
   });
 });
