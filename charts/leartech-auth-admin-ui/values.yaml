@@ -1,22 +1,18 @@
 replicaCount: 1
-
 image:
-  repository: ghcr.io/mikelear/leartech-auth-admin-ui
-  tag: latest
+  repository: us-central1-docker.pkg.dev/product-first/oci/leartech-auth-admin-ui
+  tag: 0.0.12
   pullPolicy: IfNotPresent
-
 service:
   name: leartech-auth-admin-ui
   type: ClusterIP
   port: 80
   externalPort: 80
-
 # Ingress annotations + overrides (domain comes from jxRequirements)
 ingress:
   annotations: {}
   pathType: ImplementationSpecific
   labels: {}
-
 # jxRequirements — auto-populated from jx-values.yaml per cluster/env.
 # Do NOT hardcode domains here. Preview gets domain from jx preview create,
 # staging/prod from the GitOps helmfile jx-values.yaml.
@@ -33,9 +29,7 @@ jxRequirements:
       enabled: false
       production: false
       secretName: ""
-
 knativeDeploy: false
-
 resources:
   requests:
     cpu: 50m
@@ -43,10 +37,8 @@ resources:
   limits:
     cpu: 100m
     memory: 128Mi
-
 jx:
   releasedByJX: true
-
 # Runtime config served at /api.conf.json — populated per-environment in
 # preview helmfile / staging / prod values files. See
 # hub/shared-rules/conventions.md § Frontend runtime config.
@@ -67,9 +59,9 @@ config:
     authority: ""
     scope: "openid profile email leartechapi offline"
     audiences:
-      # leartech-auth-service must be in the token aud[] so the admin API
-      # accepts the platform/tenant-admin bearer (RFC 8707 audience binding).
-      - leartech-auth-service
+    # leartech-auth-service must be in the token aud[] so the admin API
+    # accepts the platform/tenant-admin bearer (RFC 8707 audience binding).
+    - leartech-auth-service
   # Peer service base URLs — fleet-status reads these instead of
   # composing them in source. Cloned services replace this with the
   # actual peers their UI consumes.
