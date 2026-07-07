@@ -69,13 +69,21 @@ const ROLES = ['member', 'tenant_admin', 'platform_admin'] as const;
                       </select>
                     </td>
                     <td>
-                      @if ((u.permissions ?? []).length) {
-                        <div class="perms">
-                          @for (p of u.permissions; track p) { <span class="chip">{{ p }}</span> }
-                        </div>
-                      } @else {
-                        <span class="muted">—</span>
-                      }
+                      <div class="perms">
+                        @for (p of knownPerms; track p) {
+                          <button
+                            type="button"
+                            class="chip toggle"
+                            [class.on]="hasPerm(u, p)"
+                            [attr.data-testid]="'user-perm-' + p + '-' + u.email"
+                            [attr.data-on]="hasPerm(u, p)"
+                            (click)="togglePermission(u, p)"
+                            [disabled]="busyId() === u.id"
+                            [title]="(hasPerm(u, p) ? 'Remove ' : 'Grant ') + p"
+                          >{{ p }}</button>
+                        }
+                        @for (p of extraPerms(u); track p) { <span class="chip">{{ p }}</span> }
+                      </div>
                     </td>
                     <td>
                       <div class="factors">
@@ -140,6 +148,18 @@ const ROLES = ['member', 'tenant_admin', 'platform_admin'] as const;
       .fbadge.on {
         color: #0f7b3f; border-color: #9ae6b4; background: #eafff1; opacity: 1;
       }
+      .perms { display: flex; gap: 6px; flex-wrap: wrap; }
+      .chip.toggle {
+        cursor: pointer; font: inherit; font-size: 11px; font-weight: 600;
+        line-height: 1; padding: 3px 8px; border-radius: 999px;
+        border: 1px solid #d0d7de; background: transparent; color: #8b949e;
+        opacity: 0.55; transition: opacity 0.1s ease;
+      }
+      .chip.toggle:hover:not(:disabled) { opacity: 0.85; }
+      .chip.toggle.on {
+        color: #0f7b3f; border-color: #9ae6b4; background: #eafff1; opacity: 1;
+      }
+      .chip.toggle:disabled { cursor: default; }
     `,
   ],
 })
@@ -147,6 +167,7 @@ export class UsersComponent implements OnInit {
   private readonly api = inject(UsersApiAdapter);
 
   readonly roles = ROLES;
+  readonly knownPerms = ['User', 'Admin', 'PlatformAdmin'];
   readonly users = signal<User[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
@@ -187,6 +208,38 @@ export class UsersComponent implements OnInit {
     this.error.set(null);
     try {
       await firstValueFrom(this.api.setRole(id, role));
+      await this.reload();
+    } catch (e) {
+      this.error.set(this.describe(e));
+    } finally {
+      this.busyId.set(null);
+    }
+  }
+
+  hasPerm(user: User, perm: string): boolean {
+    return (user.permissions ?? []).includes(perm);
+  }
+
+  /** Permissions the user holds that aren't in the known toggle set (shown read-only). */
+  extraPerms(user: User): string[] {
+    return (user.permissions ?? []).filter((p) => !this.knownPerms.includes(p));
+  }
+
+  /** Grant or revoke a single permission, preserving the rest. Backend enforces
+   * self-lockout + privilege-escalation guards (a 403 surfaces as an error). */
+  async togglePermission(user: User, perm: string): Promise<void> {
+    const id = user.id;
+    if (!id || this.busyId()) {
+      return;
+    }
+    const current = user.permissions ?? [];
+    const next = current.includes(perm)
+      ? current.filter((p) => p !== perm)
+      : [...current, perm];
+    this.busyId.set(id);
+    this.error.set(null);
+    try {
+      await firstValueFrom(this.api.setPermissions(id, next));
       await this.reload();
     } catch (e) {
       this.error.set(this.describe(e));

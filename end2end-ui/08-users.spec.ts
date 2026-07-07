@@ -64,11 +64,13 @@ test.describe('users (platform admin)', () => {
       page.locator('[data-testid="authenticated-page"]'),
     ).toBeVisible({ timeout: 15_000 });
 
-    // Open the users screen.
-    await page.getByTestId('nav-users').click();
+    // #17: the authenticated console defaults to /users — the root path redirects
+    // there instead of rendering a bare shell. This both proves the default route
+    // and opens the screen.
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     await expect(
       page.getByTestId('users-page'),
-      'users screen did not render',
+      'default route did not land on /users',
     ).toBeVisible({ timeout: 10_000 });
 
     // The SDK list call resolves — a platform admin (with peer + audience wired)
@@ -112,6 +114,34 @@ test.describe('users (platform admin)', () => {
     expect(
       await page.getByTestId('users-error').count(),
       'changing role errored',
+    ).toBe(0);
+
+    // #14: the Security column shows 2FA + passkey status badges per user. The
+    // seeded test@ has neither enrolled, so both render disabled (data-enabled=false).
+    const twofa = page.getByTestId('user-2fa-test@leartech.com');
+    const passkey = page.getByTestId('user-passkey-test@leartech.com');
+    await expect(twofa, '2FA badge missing').toBeVisible({ timeout: 10_000 });
+    await expect(passkey, 'passkey badge missing').toBeVisible();
+    await expect(twofa).toHaveAttribute('data-enabled', 'false');
+    await expect(passkey).toHaveAttribute('data-enabled', 'false');
+
+    // #16: permissions are editable. Toggle 'Admin' on test@, confirm it flips,
+    // then toggle back so the fixture is left as found.
+    const adminPerm = page.getByTestId('user-perm-Admin-test@leartech.com');
+    await expect(adminPerm, 'Admin permission toggle missing').toBeVisible();
+    const before = await adminPerm.getAttribute('data-on');
+    await adminPerm.click();
+    await expect(page.getByTestId('users-table')).toBeVisible({ timeout: 15_000 });
+    await expect(adminPerm, 'permission did not flip').toHaveAttribute(
+      'data-on',
+      String(before !== 'true'),
+    );
+    await adminPerm.click(); // restore original state
+    await expect(page.getByTestId('users-table')).toBeVisible({ timeout: 15_000 });
+    await expect(adminPerm).toHaveAttribute('data-on', String(before === 'true'));
+    expect(
+      await page.getByTestId('users-error').count(),
+      'editing permission errored',
     ).toBe(0);
   });
 });
