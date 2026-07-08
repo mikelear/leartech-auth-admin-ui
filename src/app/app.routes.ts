@@ -18,6 +18,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./users/users.component').then((m) => m.UsersComponent),
   },
+  {
+    path: 'audit',
+    loadComponent: () =>
+      import('./audit/audit.component').then((m) => m.AuditComponent),
+  },
   // Default landing for the authenticated console: Users is the home screen
   // (it carries the stat tiles). Empty path previously rendered a bare shell.
   { path: '', redirectTo: 'users', pathMatch: 'full' },
