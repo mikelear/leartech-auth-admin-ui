@@ -55,7 +55,7 @@ interface TokenClaims {
               Users
             </a>
             <div class="navlab">Access</div>
-            <span class="nav soon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 10V7.5a4 4 0 018 0V10" stroke="currentColor" stroke-width="1.6"/><rect x="5" y="10" width="14" height="9" rx="1.6" stroke="currentColor" stroke-width="1.6"/></svg>OAuth clients<span class="tag">soon</span></span>
+            <a class="nav" routerLink="/clients" routerLinkActive="on" data-testid="nav-clients"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 10V7.5a4 4 0 018 0V10" stroke="currentColor" stroke-width="1.6"/><rect x="5" y="10" width="14" height="9" rx="1.6" stroke="currentColor" stroke-width="1.6"/></svg>OAuth clients</a>
             <a class="nav" routerLink="/audit" routerLinkActive="on" data-testid="nav-audit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 4.5h14M5 12h14M5 19.5h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Audit log</a>
           </nav>
           <div class="side-foot"><span class="dot"></span> staging</div>
