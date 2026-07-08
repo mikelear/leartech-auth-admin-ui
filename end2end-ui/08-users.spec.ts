@@ -64,6 +64,12 @@ test.describe('users (platform admin)', () => {
       timeout: 15_000,
     });
 
+    // #22: the Last-login column renders a value per user (a date or "Never") —
+    // value-agnostic (staging login state is mutable).
+    const lastLogin = page.getByTestId('user-lastlogin-test@leartech.com');
+    await expect(lastLogin, 'last-login cell missing').toBeVisible();
+    await expect(lastLogin).not.toBeEmpty();
+
     // Seeded test@ is active by default: its row shows an "Active" status
     // badge and its toggle offers to "Suspend" access.
     await expect(testRow).toContainText('Active');

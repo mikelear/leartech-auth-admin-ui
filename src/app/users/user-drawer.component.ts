@@ -109,6 +109,13 @@ function sameSet(a: string[], b: string[]): boolean {
               </div>
             </div>
           </div>
+
+          <div class="group">
+            <div class="glabel">Activity</div>
+            <div class="secrow">
+              <div><div class="sname">Last sign-in</div><div class="sstate" data-testid="drawer-last-login">{{ lastLogin() }}</div></div>
+            </div>
+          </div>
         }
       </div>
 
@@ -235,6 +242,13 @@ export class UserDrawerComponent {
 
   initial(): string {
     return (this.email() || 'N').charAt(0).toUpperCase();
+  }
+  /** Human date for the user's last successful login, or "Never". */
+  lastLogin(): string {
+    const iso = this.original?.lastLoginAt;
+    if (!iso) return 'Never';
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? String(iso) : d.toLocaleString();
   }
   hasPerm(p: string): boolean {
     return this.permissions().includes(p);

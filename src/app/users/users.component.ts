@@ -48,7 +48,7 @@ const ROLES = ['member', 'tenant_admin', 'platform_admin'] as const;
           <div class="tscroll">
             <table data-testid="users-table">
               <thead>
-                <tr><th>User</th><th>Role</th><th>Permissions</th><th>Security</th><th>Tenant</th><th>Status</th><th class="r">Actions</th></tr>
+                <tr><th>User</th><th>Role</th><th>Permissions</th><th>Security</th><th>Tenant</th><th>Last login</th><th>Status</th><th class="r">Actions</th></tr>
               </thead>
               <tbody>
                 @for (u of users(); track u.id) {
@@ -106,6 +106,7 @@ const ROLES = ['member', 'tenant_admin', 'platform_admin'] as const;
                       </div>
                     </td>
                     <td><span class="pill member">{{ shortTenant(u.tenantId) }}</span></td>
+                    <td class="sub" [attr.data-testid]="'user-lastlogin-' + u.email">{{ lastLogin(u) }}</td>
                     <td>
                       @if (u.active !== false) {
                         <span class="badge active"><span class="d"></span>Active</span>
@@ -138,7 +139,7 @@ const ROLES = ['member', 'tenant_admin', 'platform_admin'] as const;
                     </td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="7" class="muted" data-testid="users-empty">No users.</td></tr>
+                  <tr><td colspan="8" class="muted" data-testid="users-empty">No users.</td></tr>
                 }
               </tbody>
             </table>
@@ -306,6 +307,14 @@ export class UsersComponent implements OnInit {
   /** UUID → short form for the tenant pill. */
   shortTenant(id?: string): string {
     return id ? id.slice(0, 8) : '—';
+  }
+
+  /** Compact last-login date for the table, or "Never". */
+  lastLogin(u: User): string {
+    const iso = u.lastLoginAt;
+    if (!iso) return 'Never';
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? String(iso) : d.toLocaleDateString();
   }
 
   /** Turn an HttpErrorResponse into an operator-friendly message. */
