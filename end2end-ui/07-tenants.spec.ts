@@ -1,4 +1,5 @@
 import { test, expect } from 'playwright/test';
+import { loginAsPlatformAdmin } from './support/auth';
 
 /**
  * Tenants screen — runs in PREVIEW and STAGING. preview/helmfile.yaml.gotmpl now
@@ -27,42 +28,10 @@ test.describe('tenants (platform admin)', () => {
   });
 
   test('platform admin lists and creates tenants via the SDK', async ({ page }) => {
-    // Log in as the PLATFORM admin — the tenant API requires PlatformAdmin, so
-    // the default test user would 403. Poll for state (never networkidle).
-    await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 20_000 });
-
-    const alreadyAuthed =
-      (await page.locator('[data-testid="authenticated-page"]').count()) > 0;
-    if (!alreadyAuthed) {
-      const signIn = page.getByTestId('sign-in-button');
-      await expect(signIn).toBeVisible({ timeout: 15_000 });
-      await signIn.click();
-
-      const emailField = page
-        .locator('input[type="email"], input[name="email"]')
-        .first();
-      await expect(emailField, 'login form not reached').toBeVisible({
-        timeout: 15_000,
-      });
-      await emailField.fill('platform@leartech.com');
-      await page
-        .locator('input[type="password"]')
-        .first()
-        .fill(process.env['USER_PASSWORD'] || 'Test123!');
-      await page
-        .locator(
-          'button[type="submit"], button:has-text("Login"), button:has-text("Sign in")',
-        )
-        .first()
-        .click();
-
-      await page.waitForURL((url) => !url.pathname.includes('/login'), {
-        timeout: 20_000,
-      });
-    }
-    await expect(
-      page.locator('[data-testid="authenticated-page"]'),
-    ).toBeVisible({ timeout: 15_000 });
+    // Log in as the PLATFORM admin (tenant API requires PlatformAdmin) and wait
+    // until the access token is attached — see loginAsPlatformAdmin (removes the
+    // first-admin-call 401 race that previously hit this screen).
+    await loginAsPlatformAdmin(page);
 
     // Open the tenants screen.
     await page.getByTestId('nav-tenants').click();

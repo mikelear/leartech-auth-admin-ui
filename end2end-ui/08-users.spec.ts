@@ -1,4 +1,5 @@
 import { test, expect } from 'playwright/test';
+import { loginAsPlatformAdmin } from './support/auth';
 
 /**
  * Users screen — runs in PREVIEW and STAGING. preview/helmfile.yaml.gotmpl
@@ -27,42 +28,9 @@ test.describe('users (platform admin)', () => {
   });
 
   test('platform admin lists users and changes a role via the SDK', async ({ page }) => {
-    // Log in as the PLATFORM admin — the users API requires PlatformAdmin, so
-    // the default test user would 403. Poll for state (never networkidle).
-    await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 20_000 });
-
-    const alreadyAuthed =
-      (await page.locator('[data-testid="authenticated-page"]').count()) > 0;
-    if (!alreadyAuthed) {
-      const signIn = page.getByTestId('sign-in-button');
-      await expect(signIn).toBeVisible({ timeout: 15_000 });
-      await signIn.click();
-
-      const emailField = page
-        .locator('input[type="email"], input[name="email"]')
-        .first();
-      await expect(emailField, 'login form not reached').toBeVisible({
-        timeout: 15_000,
-      });
-      await emailField.fill('platform@leartech.com');
-      await page
-        .locator('input[type="password"]')
-        .first()
-        .fill(process.env['USER_PASSWORD'] || 'Test123!');
-      await page
-        .locator(
-          'button[type="submit"], button:has-text("Login"), button:has-text("Sign in")',
-        )
-        .first()
-        .click();
-
-      await page.waitForURL((url) => !url.pathname.includes('/login'), {
-        timeout: 20_000,
-      });
-    }
-    await expect(
-      page.locator('[data-testid="authenticated-page"]'),
-    ).toBeVisible({ timeout: 15_000 });
+    // Log in as the PLATFORM admin (users API requires PlatformAdmin) and wait
+    // until the access token is attached — see loginAsPlatformAdmin.
+    await loginAsPlatformAdmin(page);
 
     // #17: the authenticated console defaults to /users — the root path redirects
     // there instead of rendering a bare shell. This both proves the default route
