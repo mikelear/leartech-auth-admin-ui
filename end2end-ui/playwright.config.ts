@@ -24,6 +24,12 @@ export default defineConfig({
   // leartech-auth-ui's config after the same symptom).
   timeout: 60_000,
   retries: 0,
+  // Cap parallelism. The in-cluster e2e-ui pod has a modest memory limit; the
+  // default (= CPU count, 8) spins up 8 headless Chromium instances at once and
+  // OOM-kills the pod once the suite grew past ~a dozen specs — which showed up
+  // as opaque "arrival Failed" with no results (killed mid-run after 01-page-loads).
+  // 2 workers keeps memory well under the limit; the specs are individually fast.
+  workers: 2,
   use: {
     baseURL:
       process.env['STAGING_URL'] ||
