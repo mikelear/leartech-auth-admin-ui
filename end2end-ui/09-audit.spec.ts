@@ -1,4 +1,5 @@
 import { test, expect } from 'playwright/test';
+import { loginAsPlatformAdmin } from './support/auth';
 
 /**
  * Audit-log screen — runs in PREVIEW and STAGING. Proves the audit read path end
@@ -16,32 +17,8 @@ test.describe('audit log (platform admin)', () => {
   });
 
   test('platform admin views + filters the audit log via the SDK', async ({ page }) => {
-    await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 20_000 });
-
-    const alreadyAuthed =
-      (await page.locator('[data-testid="authenticated-page"]').count()) > 0;
-    if (!alreadyAuthed) {
-      const signIn = page.getByTestId('sign-in-button');
-      await expect(signIn).toBeVisible({ timeout: 15_000 });
-      await signIn.click();
-      const emailField = page
-        .locator('input[type="email"], input[name="email"]')
-        .first();
-      await expect(emailField, 'login form not reached').toBeVisible({ timeout: 15_000 });
-      await emailField.fill('platform@leartech.com');
-      await page
-        .locator('input[type="password"]')
-        .first()
-        .fill(process.env['USER_PASSWORD'] || 'Test123!');
-      await page
-        .locator('button[type="submit"], button:has-text("Login"), button:has-text("Sign in")')
-        .first()
-        .click();
-      await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 20_000 });
-    }
-    await expect(page.locator('[data-testid="authenticated-page"]')).toBeVisible({
-      timeout: 15_000,
-    });
+    // Shared login with retry (absorbs the auth-stack readiness race) + token gate.
+    await loginAsPlatformAdmin(page);
 
     // Open Audit via the sidebar nav — proves the link is live (no longer "soon").
     await page.getByTestId('nav-audit').click();
