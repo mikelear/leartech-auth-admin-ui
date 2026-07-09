@@ -16,13 +16,19 @@ import { defineConfig } from 'playwright/test';
 export default defineConfig({
   testDir: '.',
   testMatch: '*.spec.ts',
+  // Global readiness gate: wait ONCE for the auth stack (seed Job creating
+  // platform@ + Hydra) to be up before any spec runs, so per-test logins hit a
+  // warm stack instead of racing a cold-start seed. Removes the dominant
+  // ordering flake (07/08 exhausting login retries while 09/11 passed). Skips
+  // itself when no PREVIEW_URL/STAGING_URL target is set.
+  globalSetup: './global-setup.ts',
   // Per-test cap. The login-based specs (07-tenants, 08-users) drive the full
   // OAuth round-trip — form load + submit + Hydra consent + callback + token
   // decode — then screen actions. On the in-cluster software-rendered
-  // (swiftshader) browser that exceeds 30s, so the test was killed mid-flow on
-  // GCP (AZ was just fast enough). 60s gives the slow browser room (matches
-  // leartech-auth-ui's config after the same symptom).
-  timeout: 60_000,
+  // (swiftshader) browser that exceeds 30s. 90s gives the slow browser room even
+  // if the per-test helper needs a retry (the readiness gate absorbs the cold
+  // start, so this ceiling is only hit by a genuinely slow browser, not a race).
+  timeout: 90_000,
   retries: 0,
   // Cap parallelism. The in-cluster e2e-ui pod has a modest memory limit; the
   // default (= CPU count, 8) spins up 8 headless Chromium instances at once and
