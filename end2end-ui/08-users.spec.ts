@@ -77,18 +77,13 @@ test.describe('users (platform admin)', () => {
       page.getByTestId('user-active-toggle-test@leartech.com'),
     ).toContainText('Suspend');
 
-    // Change test@'s role and confirm no error surfaces.
-    await page
-      .getByTestId('user-role-select-test@leartech.com')
-      .selectOption('tenant_admin');
-
-    await expect(page.getByTestId('users-table')).toBeVisible({
-      timeout: 15_000,
-    });
-    expect(
-      await page.getByTestId('users-error').count(),
-      'changing role errored',
-    ).toBe(0);
+    // NOTE: the change-a-role assertion runs on a THROWAWAY user in the drawer
+    // lifecycle below — deliberately NOT on the shared test@ fixture. test@ is
+    // seeded role='admin' for auth-service's 02-oauth-flow (which asserts
+    // ext.user_role='admin'), and the UI role dropdown only offers
+    // member/tenant_admin/platform_admin — it CANNOT restore 'admin'. Mutating
+    // test@'s role here left it 'tenant_admin' on persistent staging and poisoned
+    // that cross-repo suite (reddened the az gate). Keep role-change disposable.
 
     // #14: the Security column shows a 2FA + passkey status badge per user.
     // test@'s enrolment state is MUTABLE on persistent staging (unlike a fresh
@@ -153,6 +148,15 @@ test.describe('users (platform admin)', () => {
     }
 
     await expect(createdRow, 'created user did not appear').toBeVisible();
+
+    // Change-a-role coverage, done on THIS disposable row (never shared test@):
+    // drive the role select via the SDK (adminSetUserRole) and confirm no error.
+    await page.getByTestId('user-role-select-' + email).selectOption('tenant_admin');
+    await expect(page.getByTestId('users-table')).toBeVisible({ timeout: 15_000 });
+    expect(
+      await page.getByTestId('users-error').count(),
+      'changing role errored',
+    ).toBe(0);
 
     await page.getByTestId('user-details-' + email).click();
     await expect(page.getByTestId('user-drawer')).toBeVisible();
