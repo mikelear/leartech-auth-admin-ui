@@ -2,47 +2,68 @@ apiVersion: config.lighthouse.jenkins-x.io/v1alpha1
 kind: TriggerConfig
 spec:
   presubmits:
+  # ── BUILD LANE: PRs targeting main. Unchanged behaviour, now branch-scoped. ──
   - name: pr
     context: "pr"
     always_run: true
+    branches:
+    - ^main$
     source: pullrequest.yaml
   - name: lint
     context: "lint"
     always_run: true
+    branches:
+    - ^main$
     source: lint.yaml
   - name: test
     context: "test"
     always_run: true
+    branches:
+    - ^main$
     source: test.yaml
   - name: npm-audit
     context: "npm-audit"
     always_run: true
+    branches:
+    - ^main$
     source: npm-audit.yaml
   - name: security-scan
     context: "security-scan"
     always_run: true
+    branches:
+    - ^main$
     source: security-scan/pullrequest.yaml
   - name: image-scan
     context: "image-scan"
     always_run: true
+    branches:
+    - ^main$
     source: security-scan/image-scan.yaml
   - name: dynamic-scan
     context: "dynamic-scan"
     always_run: true
+    branches:
+    - ^main$
     source: security-scan/dynamic/pullrequest.yaml
   - name: ai-review
     context: "ai-review"
     always_run: true
+    branches:
+    - ^main$
     source: ai-review/pullrequest.yaml
   - name: end2end
     context: "end2end"
     always_run: true
     optional: true
+    branches:
+    - ^main$
     source: end2end.yaml
   - name: end2end-ui
     context: "end2end-ui"
     always_run: true
     optional: true
+    branches:
+    - ^main$
     source: end2end-ui.yaml
   - name: ai-feedback
     context: ai-feedback
@@ -51,6 +72,18 @@ spec:
     trigger: "(?m)^/ai-feedback"
     rerun_command: "/ai-feedback"
     source: ai-review/feedback.yaml
+
+  # ── SKETCH LANE: PRs targeting design. Deliberately minimal. ──
+  # PROBE ONLY: uses lint.yaml as a known-good cheap pipeline, purely to prove
+  # the base-branch filter fires. A real sketch lane is build→preview→screenshot.
+  - name: sketch-preview
+    context: "sketch-preview"
+    always_run: true
+    optional: true
+    branches:
+    - ^design$
+    source: lint.yaml
+
   postsubmits:
   - name: release
     context: release
